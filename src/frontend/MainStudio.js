@@ -766,7 +766,26 @@ export default function MainStudio() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [showLandingAuth, setShowLandingAuth] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState('login'); // 'login' | 'signup'
+  const [authModalMode, setAuthModalMode] = useState('login'); // 'login' | 'signup' | 'forgot_password' | 'forgot_username'
+  const [newPassword, setNewPassword] = useState('');
+  const [recoveredUsername, setRecoveredUsername] = useState('');
+  const [recoveryStep, setRecoveryStep] = useState('email'); // 'email' | 'otp' | 'reset' | 'success'
+  const [resetTargetUser, setResetTargetUser] = useState(null);
+
+  const resetAuthStates = () => {
+    setAuthUsername('');
+    setAuthPassword('');
+    setAuthContact('');
+    setAuthOtpSent(false);
+    setAuthOtpInput('');
+    setGeneratedOtp('');
+    setAuthError('');
+    setNewPassword('');
+    setRecoveredUsername('');
+    setRecoveryStep('email');
+    setResetTargetUser(null);
+  };
+
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authContact, setAuthContact] = useState('');
@@ -1676,6 +1695,9 @@ export default function MainStudio() {
     if (typeof window !== 'undefined') {
       const activeUser = localStorage.getItem('switchx_active_user');
       setCurrentUser(activeUser);
+      if (activeUser) {
+        setIsAppUnrolled(true);
+      }
 
       const guestUsage = parseInt(localStorage.getItem('switchx_guest_usage') || '0', 10);
       setGuestUsageCount(guestUsage);
@@ -2019,6 +2041,494 @@ export default function MainStudio() {
     }
   };
 
+  const renderAuthForm = (isModal) => {
+    let title = "SwitchX Workspace";
+    let subtitle = "Welcome back. Initialize session.";
+    let formSubmitHandler = handleLogin;
+
+    if (authModalMode === 'signup') {
+      subtitle = "Create secure developer profile.";
+      formSubmitHandler = handleSignup;
+    } else if (authModalMode === 'forgot_password') {
+      subtitle = "Reset secure password via OTP.";
+      formSubmitHandler = handleForgotPassword;
+    } else if (authModalMode === 'forgot_username') {
+      subtitle = "Recover profile username via OTP.";
+      formSubmitHandler = handleForgotUsername;
+    }
+
+    return (
+      <div className="bg-[#030306]/75 border border-white/[0.04] rounded-2xl p-6 w-[340px] max-w-full space-y-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl animate-fade-in relative z-50 text-center">
+        {isModal ? (
+          <button 
+            type="button" 
+            onClick={() => { setAuthModalOpen(false); setAuthError(''); }} 
+            className="absolute top-4 right-4 text-zinc-550 hover:text-zinc-350 transition-colors p-1"
+          >
+            <X size={15} />
+          </button>
+        ) : (
+          <button 
+            type="button" 
+            onClick={() => { setShowLandingAuth(false); setAuthError(''); }} 
+            className="absolute top-4 left-4 text-zinc-555 hover:text-zinc-300 transition-colors text-[9px] font-mono uppercase tracking-wider select-none flex items-center gap-1"
+          >
+            <span>← Back</span>
+          </button>
+        )}
+
+        <div className="text-center space-y-1.5 pb-2 border-b border-zinc-900/50 pt-2 select-none">
+          <span className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-200 font-sans">{title}</span>
+          <p className="text-[9px] text-zinc-500 font-mono tracking-wider uppercase">{subtitle}</p>
+        </div>
+
+        {authError && (
+          <div className="p-2.5 rounded-lg border border-red-955/20 bg-red-955/10 text-red-400 text-[10px] text-center font-medium leading-normal font-sans">
+            {authError}
+          </div>
+        )}
+
+        <form onSubmit={formSubmitHandler} className="space-y-3">
+          {authModalMode === 'login' && (
+            <>
+              <div className="space-y-1 text-left animate-fade-in">
+                <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Username or Email</label>
+                <input
+                  type="text"
+                  required
+                  value={authUsername}
+                  onChange={(e) => setAuthUsername(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
+                  placeholder="Enter credentials..."
+                  autoComplete="off"
+                />
+              </div>
+
+              <div className="space-y-1 text-left animate-fade-in">
+                <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {/* Forgot Username/Password Links */}
+              <div className="flex justify-between items-center text-[9.5px] font-mono uppercase tracking-wider text-zinc-500 select-none pb-0.5 pt-0.5 px-1">
+                <button
+                  type="button"
+                  onClick={() => { resetAuthStates(); setAuthModalMode('forgot_password'); }}
+                  className="hover:text-indigo-400 transition-colors"
+                >
+                  Forgot Password?
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { resetAuthStates(); setAuthModalMode('forgot_username'); }}
+                  className="hover:text-indigo-400 transition-colors"
+                >
+                  Forgot Username?
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
+              >
+                Log In
+              </button>
+            </>
+          )}
+
+          {authModalMode === 'signup' && (
+            <>
+              {!authOtpSent ? (
+                <>
+                  <div className="space-y-1 text-left animate-fade-in">
+                    <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Username</label>
+                    <input
+                      type="text"
+                      required
+                      value={authUsername}
+                      onChange={(e) => setAuthUsername(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
+                      placeholder="Create username..."
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  <div className="space-y-1 text-left animate-fade-in">
+                    <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="space-y-2 pt-1 text-left animate-fade-in">
+                    <div className="flex justify-between items-center pl-1 pr-1">
+                      <label className="text-[8.5px] font-mono font-bold text-zinc-555 uppercase tracking-widest block select-none">Verification Method</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowGatewaySettings(!showGatewaySettings);
+                          setAuthError('');
+                        }}
+                        className={`text-[8.5px] font-mono uppercase tracking-wider transition-colors flex items-center gap-1 ${showGatewaySettings ? 'text-indigo-400 font-bold' : 'text-zinc-500 hover:text-zinc-350'}`}
+                      >
+                        <span>⚙️</span>
+                        <span>{showGatewaySettings ? 'Close Settings' : 'Gateway Config'}</span>
+                      </button>
+                    </div>
+
+                    {showGatewaySettings ? (
+                      <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-2.5 animate-fade-in text-left">
+                        <div className="flex justify-between items-center border-b border-indigo-500/10 pb-1.5 select-none">
+                          <span className="text-[9px] font-mono font-bold text-indigo-400 uppercase tracking-widest">Gateway settings</span>
+                          <span className="text-[7.5px] font-mono text-zinc-550">Saved Locally</span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center">
+                            <label className="text-[8px] font-mono font-bold text-zinc-550 uppercase tracking-wider">Resend API Key (Email)</label>
+                            <a href="https://resend.com" target="_blank" rel="noreferrer" className="text-[8px] font-mono text-indigo-400 hover:underline">Get Key</a>
+                          </div>
+                          <input
+                            type="password"
+                            value={gatewayResendKey}
+                            onChange={(e) => {
+                              setGatewayResendKey(e.target.value);
+                              localStorage.setItem('switchx_gate_resend_api_key', e.target.value.trim());
+                            }}
+                            className="w-full px-2 py-1 bg-black/60 border border-zinc-900/80 rounded-lg text-[10px] text-zinc-300 focus:outline-none focus:border-indigo-500/40 font-mono"
+                            placeholder="re_..."
+                            autoComplete="off"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowGatewaySettings(false)}
+                          className="w-full py-1.5 bg-indigo-950/30 hover:bg-indigo-900/40 border border-indigo-500/20 text-indigo-300 text-[9px] font-bold tracking-wider rounded-lg transition-all uppercase mt-1"
+                        >
+                          Save & Close Settings
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-1 text-left animate-fade-in">
+                          <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Email Address</label>
+                          <input
+                            type="email"
+                            required
+                            value={authContact}
+                            onChange={(e) => setAuthContact(e.target.value)}
+                            className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
+                            placeholder="email@example.com"
+                            autoComplete="off"
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans animate-fade-in"
+                        >
+                          Send Verification Code
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-3 py-1 text-left animate-fade-in">
+                    <p className="text-[10px] text-zinc-405 font-sans leading-relaxed">
+                      A verification code has been dispatched. Please verify below.
+                    </p>
+                    <div className="space-y-1">
+                      <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Verification Code</label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        value={authOtpInput}
+                        onChange={(e) => setAuthOtpInput(e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-3 py-2 bg-black/40 border border-zinc-900/80 rounded-xl text-sm font-bold tracking-[0.5em] text-center text-indigo-300 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-mono"
+                        placeholder="000000"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
+                  >
+                    Verify & Sign Up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthOtpSent(false);
+                      setAuthOtpInput('');
+                      setGeneratedOtp('');
+                    }}
+                    className="w-full text-center text-[9px] text-zinc-550 hover:text-zinc-350 font-mono uppercase tracking-wider mt-1 block transition-colors select-none"
+                  >
+                    ← Change Details
+                  </button>
+                </>
+              )}
+            </>
+          )}
+
+          {authModalMode === 'forgot_password' && (
+            <>
+              {recoveryStep === 'email' && (
+                <div className="space-y-3 text-left animate-fade-in">
+                  <div className="space-y-1">
+                    <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Registered Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={authContact}
+                      onChange={(e) => setAuthContact(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
+                      placeholder="email@example.com"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
+                  >
+                    Send Reset Code
+                  </button>
+                </div>
+              )}
+
+              {recoveryStep === 'otp' && (
+                <div className="space-y-3 text-left animate-fade-in">
+                  <p className="text-[10px] text-zinc-405 font-sans leading-relaxed">
+                    A security code has been sent to your email. Please verify below.
+                  </p>
+                  <div className="space-y-1">
+                    <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Verification Code</label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={6}
+                      value={authOtpInput}
+                      onChange={(e) => setAuthOtpInput(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-3 py-2 bg-black/40 border border-zinc-900/80 rounded-xl text-sm font-bold tracking-[0.5em] text-center text-indigo-300 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-mono"
+                      placeholder="000000"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
+                  >
+                    Verify Code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthOtpSent(false);
+                      setAuthOtpInput('');
+                      setGeneratedOtp('');
+                      setRecoveryStep('email');
+                    }}
+                    className="w-full text-center text-[9px] text-zinc-550 hover:text-zinc-350 font-mono uppercase tracking-wider mt-1 block transition-colors select-none"
+                  >
+                    ← Back
+                  </button>
+                </div>
+              )}
+
+              {recoveryStep === 'reset' && (
+                <div className="space-y-3 text-left animate-fade-in">
+                  <p className="text-[10px] text-zinc-405 font-sans leading-relaxed">
+                    Identity verified for <b>@{resetTargetUser?.username}</b>. Set new password:
+                  </p>
+                  <div className="space-y-1">
+                    <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">New Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
+                  >
+                    Reset Password
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {authModalMode === 'forgot_username' && (
+            <>
+              {recoveryStep === 'email' && (
+                <div className="space-y-3 text-left animate-fade-in">
+                  <div className="space-y-1">
+                    <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Registered Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={authContact}
+                      onChange={(e) => setAuthContact(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
+                      placeholder="email@example.com"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
+                  >
+                    Send Recovery Code
+                  </button>
+                </div>
+              )}
+
+              {recoveryStep === 'otp' && (
+                <div className="space-y-3 text-left animate-fade-in">
+                  <p className="text-[10px] text-zinc-405 font-sans leading-relaxed">
+                    A security code has been sent to your email. Please verify below.
+                  </p>
+                  <div className="space-y-1">
+                    <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Verification Code</label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={6}
+                      value={authOtpInput}
+                      onChange={(e) => setAuthOtpInput(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-3 py-2 bg-black/40 border border-zinc-900/80 rounded-xl text-sm font-bold tracking-[0.5em] text-center text-indigo-300 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-mono"
+                      placeholder="000000"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
+                  >
+                    Verify Code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthOtpSent(false);
+                      setAuthOtpInput('');
+                      setGeneratedOtp('');
+                      setRecoveryStep('email');
+                    }}
+                    className="w-full text-center text-[9px] text-zinc-550 hover:text-zinc-350 font-mono uppercase tracking-wider mt-1 block transition-colors select-none"
+                  >
+                    ← Back
+                  </button>
+                </div>
+              )}
+
+              {recoveryStep === 'success' && (
+                <div className="space-y-3 text-left animate-fade-in">
+                  <p className="text-[10px] text-zinc-405 font-sans leading-relaxed text-center">
+                    Identity verified! Your registered username is:
+                  </p>
+                  <div className="py-4 px-3 bg-zinc-950/40 border border-zinc-900 rounded-xl text-center font-bold font-mono tracking-widest text-indigo-300 text-sm select-all">
+                    @{recoveredUsername}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetAuthStates();
+                      setAuthModalMode('login');
+                    }}
+                    className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
+                  >
+                    Back to Log In
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </form>
+
+        <div className="flex flex-col gap-2 items-center text-[10px] pt-1">
+          {authModalMode !== 'login' && (
+            <button
+              type="button"
+              onClick={() => {
+                resetAuthStates();
+                setAuthModalMode('login');
+              }}
+              className="text-zinc-400 hover:text-zinc-200 transition-colors font-sans"
+            >
+              Already have an account? Log In
+            </button>
+          )}
+
+          {authModalMode === 'login' && (
+            <button
+              type="button"
+              onClick={() => {
+                resetAuthStates();
+                setAuthModalMode('signup');
+              }}
+              className="text-zinc-400 hover:text-zinc-200 transition-colors font-sans"
+            >
+              Don't have an account? Sign Up
+            </button>
+          )}
+
+          {isModal ? (
+            <button
+              type="button"
+              onClick={() => {
+                setAuthModalOpen(false);
+                setAuthError('');
+                setTerminalLogs(prev => [...prev, '[SYSTEM] Switched to Guest Layer. Capped at 3 queries.']);
+              }}
+              className="text-[9.5px] font-mono text-zinc-650 hover:text-zinc-450 uppercase tracking-widest pt-1"
+            >
+              Continue as Guest
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLandingAuth(false);
+                  setIsAppUnrolled(true);
+                  setAuthError('');
+                  setTerminalLogs(prev => [...prev, '[SYSTEM] Switched to Guest Layer. Capped at 3 queries.']);
+                }}
+                className="text-[9.5px] font-mono text-zinc-650 hover:text-zinc-450 uppercase tracking-widest pt-1"
+              >
+                Continue as Guest
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAboutOpen(true)}
+                className="text-[8.5px] font-mono text-zinc-600 hover:text-indigo-400 uppercase tracking-widest mt-2 border-t border-zinc-900/60 pt-2 w-full transition-colors flex items-center justify-center gap-1 select-none"
+              >
+                <span>ⓘ About SwitchX</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const handleLogin = (e) => {
     if (e) e.preventDefault();
     setAuthError('');
@@ -2027,7 +2537,10 @@ export default function MainStudio() {
       return;
     }
     const db = JSON.parse(localStorage.getItem('switchx_users') || '[]');
-    const user = db.find(u => u.username.toLowerCase() === authUsername.trim().toLowerCase());
+    const user = db.find(u => 
+      u.username.toLowerCase() === authUsername.trim().toLowerCase() ||
+      (u.contact && u.contact.toLowerCase() === authUsername.trim().toLowerCase())
+    );
     if (!user || user.password !== authPassword) {
       setAuthError('Invalid username or password.');
       return;
@@ -2127,6 +2640,12 @@ export default function MainStudio() {
       const exists = db.some(u => u.username.toLowerCase() === authUsername.trim().toLowerCase());
       if (exists) {
         setAuthError('Username already taken.');
+        return;
+      }
+
+      const emailExists = db.some(u => u.contact && u.contact.toLowerCase() === contactVal.toLowerCase());
+      if (emailExists) {
+        setAuthError('Email address already registered.');
         return;
       }
 
@@ -2252,12 +2771,167 @@ export default function MainStudio() {
     setGeneratedOtp('');
   };
 
+  const handleForgotPassword = (e) => {
+    if (e) e.preventDefault();
+    setAuthError('');
+
+    const db = JSON.parse(localStorage.getItem('switchx_users') || '[]');
+    const contactVal = authContact.trim();
+
+    if (recoveryStep === 'email') {
+      if (!contactVal || !contactVal.includes('@')) {
+        setAuthError('Please enter a valid email address.');
+        return;
+      }
+      const user = db.find(u => u.contact && u.contact.toLowerCase() === contactVal.toLowerCase());
+      if (!user) {
+        setAuthError('No registered user found with this email address.');
+        return;
+      }
+
+      setResetTargetUser(user);
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(otpCode);
+      setAuthOtpSent(true);
+      setRecoveryStep('otp');
+
+      setOtpToast({
+        code: otpCode,
+        contact: contactVal,
+        visible: true
+      });
+
+      setTerminalLogs(prev => [
+        ...prev,
+        `[SYSTEM] Password reset OTP initiated for user: ${user.username}...`,
+        `[SYSTEM] Verification OTP code sent to ${contactVal}.`
+      ]);
+
+      fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          contact: contactVal, 
+          code: otpCode,
+          keys: {
+            resendApiKey: gatewayResendKey.trim(),
+            twilioAccountSid: gatewayTwilioSid.trim(),
+            twilioAuthToken: gatewayTwilioToken.trim(),
+            twilioFromNumber: gatewayTwilioFrom.trim()
+          }
+        })
+      }).catch(err => console.error("Forgot password OTP send fail:", err));
+
+    } else if (recoveryStep === 'otp') {
+      if (!authOtpInput.trim()) {
+        setAuthError('Please enter the verification code.');
+        return;
+      }
+      if (authOtpInput.trim() !== generatedOtp) {
+        setAuthError('Incorrect verification code.');
+        return;
+      }
+      setRecoveryStep('reset');
+      setAuthOtpSent(false);
+      setAuthOtpInput('');
+
+    } else if (recoveryStep === 'reset') {
+      if (newPassword.length < 4) {
+        setAuthError('Password must be at least 4 characters.');
+        return;
+      }
+
+      const updatedDb = db.map(u => {
+        if (u.username.toLowerCase() === resetTargetUser.username.toLowerCase()) {
+          return { ...u, password: newPassword };
+        }
+        return u;
+      });
+      localStorage.setItem('switchx_users', JSON.stringify(updatedDb));
+
+      setTerminalLogs(prev => [...prev, `[SUCCESS] Password updated successfully for user: ${resetTargetUser.username}`]);
+      resetAuthStates();
+      setAuthModalMode('login');
+      alert("Password reset successfully! Please log in with your new password.");
+    }
+  };
+
+  const handleForgotUsername = (e) => {
+    if (e) e.preventDefault();
+    setAuthError('');
+
+    const db = JSON.parse(localStorage.getItem('switchx_users') || '[]');
+    const contactVal = authContact.trim();
+
+    if (recoveryStep === 'email') {
+      if (!contactVal || !contactVal.includes('@')) {
+        setAuthError('Please enter a valid email address.');
+        return;
+      }
+      const user = db.find(u => u.contact && u.contact.toLowerCase() === contactVal.toLowerCase());
+      if (!user) {
+        setAuthError('No registered user found with this email address.');
+        return;
+      }
+
+      setResetTargetUser(user);
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(otpCode);
+      setAuthOtpSent(true);
+      setRecoveryStep('otp');
+
+      setOtpToast({
+        code: otpCode,
+        contact: contactVal,
+        visible: true
+      });
+
+      setTerminalLogs(prev => [
+        ...prev,
+        `[SYSTEM] Username recovery OTP initiated...`,
+        `[SYSTEM] Verification OTP code sent to ${contactVal}.`
+      ]);
+
+      fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          contact: contactVal, 
+          code: otpCode,
+          keys: {
+            resendApiKey: gatewayResendKey.trim(),
+            twilioAccountSid: gatewayTwilioSid.trim(),
+            twilioAuthToken: gatewayTwilioToken.trim(),
+            twilioFromNumber: gatewayTwilioFrom.trim()
+          }
+        })
+      }).catch(err => console.error("Forgot username OTP send fail:", err));
+
+    } else if (recoveryStep === 'otp') {
+      if (!authOtpInput.trim()) {
+        setAuthError('Please enter the verification code.');
+        return;
+      }
+      if (authOtpInput.trim() !== generatedOtp) {
+        setAuthError('Incorrect verification code.');
+        return;
+      }
+      setRecoveredUsername(resetTargetUser.username);
+      setRecoveryStep('success');
+      setAuthOtpSent(false);
+      setAuthOtpInput('');
+    }
+  };
+
   const handleSignout = () => {
     if (currentUser) {
       setTerminalLogs(prev => [...prev, `[SYSTEM] User ${currentUser} signed out.`]);
     }
     setCurrentUser(null);
     localStorage.removeItem('switchx_active_user');
+    setIsAppUnrolled(false);
+    resetAuthStates();
+    setShowLandingAuth(false);
     
     // Clear state sessions and load/reset guest sessions
     localStorage.setItem('switchx_guest_usage', '0');
@@ -2762,248 +3436,7 @@ export default function MainStudio() {
               <span className="text-[8px] font-mono tracking-[0.4em] uppercase text-zinc-500 mt-6 group-hover:text-zinc-350 transition-colors select-none">Click to Initialize</span>
             </div>
           ) : (
-            <div className="bg-[#030306]/75 border border-white/[0.04] rounded-2xl p-6 w-[340px] max-w-full space-y-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl animate-fade-in relative z-50 text-center">
-              
-              <button 
-                type="button" 
-                onClick={() => { setShowLandingAuth(false); setAuthError(''); }} 
-                className="absolute top-4 left-4 text-zinc-555 hover:text-zinc-300 transition-colors text-[9px] font-mono uppercase tracking-wider select-none flex items-center gap-1"
-              >
-                <span>← Back</span>
-              </button>
-
-              <div className="text-center space-y-1.5 pb-2 border-b border-zinc-900/50 pt-2 select-none">
-                <span className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-200 font-sans">SwitchX Workspace</span>
-                <p className="text-[9px] text-zinc-500 font-mono tracking-wider uppercase">
-                  {authModalMode === 'login' ? 'Welcome back. Initialize session.' : 'Create secure developer profile.'}
-                </p>
-              </div>
-
-              {authError && (
-                <div className="p-2.5 rounded-lg border border-red-955/20 bg-red-955/10 text-red-400 text-[10px] text-center font-medium leading-normal font-sans">
-                  {authError}
-                </div>
-              )}
-
-              <form onSubmit={authModalMode === 'login' ? handleLogin : handleSignup} className="space-y-3">
-                {authModalMode === 'login' ? (
-                  <>
-                    <div className="space-y-1 text-left animate-fade-in">
-                      <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Username</label>
-                      <input
-                        type="text"
-                        required
-                        value={authUsername}
-                        onChange={(e) => setAuthUsername(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
-                        placeholder="Enter username..."
-                        autoComplete="off"
-                      />
-                    </div>
-
-                    <div className="space-y-1 text-left animate-fade-in">
-                      <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={authPassword}
-                        onChange={(e) => setAuthPassword(e.target.value)}
-                        className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
-                        placeholder="••••••••"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
-                    >
-                      Log In
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {!authOtpSent ? (
-                      <>
-                        <div className="space-y-1 text-left animate-fade-in">
-                          <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Username</label>
-                          <input
-                            type="text"
-                            required
-                            value={authUsername}
-                            onChange={(e) => setAuthUsername(e.target.value)}
-                            className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
-                            placeholder="Create username..."
-                            autoComplete="off"
-                          />
-                        </div>
-
-                        <div className="space-y-1 text-left animate-fade-in">
-                          <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Password</label>
-                          <input
-                            type="password"
-                            required
-                            value={authPassword}
-                            onChange={(e) => setAuthPassword(e.target.value)}
-                            className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
-                            placeholder="••••••••"
-                          />
-                        </div>
-
-                        <div className="space-y-2 pt-1 text-left animate-fade-in">
-                          <div className="flex justify-between items-center pl-1 pr-1">
-                            <label className="text-[8.5px] font-mono font-bold text-zinc-555 uppercase tracking-widest block select-none">Verification Method</label>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowGatewaySettings(!showGatewaySettings);
-                                setAuthError('');
-                              }}
-                              className={`text-[8.5px] font-mono uppercase tracking-wider transition-colors flex items-center gap-1 ${showGatewaySettings ? 'text-indigo-400 font-bold' : 'text-zinc-500 hover:text-zinc-350'}`}
-                            >
-                              <span>⚙️</span>
-                              <span>{showGatewaySettings ? 'Close Settings' : 'Gateway Config'}</span>
-                            </button>
-                          </div>
-
-                          {showGatewaySettings ? (
-                            <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-2.5 animate-fade-in text-left">
-                              <div className="flex justify-between items-center border-b border-indigo-500/10 pb-1.5 select-none">
-                                <span className="text-[9px] font-mono font-bold text-indigo-400 uppercase tracking-widest">Gateway settings</span>
-                                <span className="text-[7.5px] font-mono text-zinc-550">Saved Locally</span>
-                              </div>
-                              
-                              {/* Resend Key */}
-                              <div className="space-y-1">
-                                <div className="flex justify-between items-center">
-                                  <label className="text-[8px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Resend API Key (Email)</label>
-                                  <a href="https://resend.com" target="_blank" rel="noreferrer" className="text-[8px] font-mono text-indigo-400 hover:underline">Get Key</a>
-                                </div>
-                                <input
-                                  type="password"
-                                  value={gatewayResendKey}
-                                  onChange={(e) => {
-                                    setGatewayResendKey(e.target.value);
-                                    localStorage.setItem('switchx_gate_resend_api_key', e.target.value.trim());
-                                  }}
-                                  className="w-full px-2 py-1 bg-black/60 border border-zinc-900/80 rounded-lg text-[10px] text-zinc-300 focus:outline-none focus:border-indigo-500/40 font-mono"
-                                  placeholder="re_..."
-                                  autoComplete="off"
-                                />
-                              </div>
-
-
-                              
-                              <button
-                                type="button"
-                                onClick={() => setShowGatewaySettings(false)}
-                                className="w-full py-1.5 bg-indigo-950/30 hover:bg-indigo-900/40 border border-indigo-500/20 text-indigo-300 text-[9px] font-bold tracking-wider rounded-lg transition-all uppercase mt-1"
-                              >
-                                Save & Close Settings
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="space-y-1 text-left animate-fade-in">
-                                <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Email Address</label>
-                                <input
-                                  type="email"
-                                  required
-                                  value={authContact}
-                                  onChange={(e) => setAuthContact(e.target.value)}
-                                  className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
-                                  placeholder="email@example.com"
-                                  autoComplete="off"
-                                />
-                              </div>
-
-                              <button
-                                type="submit"
-                                className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans animate-fade-in"
-                              >
-                                Send Verification Code
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="space-y-3 py-1 text-left animate-fade-in">
-                          <p className="text-[10px] text-zinc-405 font-sans leading-relaxed">
-                            A verification code has been dispatched. Please verify below.
-                          </p>
-                          <div className="space-y-1">
-                            <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Verification Code</label>
-                            <input
-                              type="text"
-                              required
-                              maxLength={6}
-                              value={authOtpInput}
-                              onChange={(e) => setAuthOtpInput(e.target.value.replace(/\D/g, ''))}
-                              className="w-full px-3 py-2 bg-black/40 border border-zinc-900/80 rounded-xl text-sm font-bold tracking-[0.5em] text-center text-indigo-300 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-mono"
-                              placeholder="000000"
-                            />
-                          </div>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
-                        >
-                          Verify & Sign Up
-                        </button>
-                        
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAuthOtpSent(false);
-                            setAuthOtpInput('');
-                            setGeneratedOtp('');
-                          }}
-                          className="w-full text-center text-[9px] text-zinc-550 hover:text-zinc-350 font-mono uppercase tracking-wider mt-1 block transition-colors select-none"
-                        >
-                          ← Change Details
-                        </button>
-                      </>
-                    )}
-                  </>
-                )}
-              </form>
-
-              <div className="flex flex-col gap-2 items-center text-[10px] pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthModalMode(authModalMode === 'login' ? 'signup' : 'login');
-                    setAuthError('');
-                  }}
-                  className="text-zinc-400 hover:text-zinc-200 transition-colors font-sans"
-                >
-                  {authModalMode === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Log In"}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLandingAuth(false);
-                    setIsAppUnrolled(true);
-                    setAuthError('');
-                    setTerminalLogs(prev => [...prev, '[SYSTEM] Switched to Guest Layer. Capped at 3 queries.']);
-                  }}
-                  className="text-[9.5px] font-mono text-zinc-650 hover:text-zinc-450 uppercase tracking-widest pt-1"
-                >
-                  Continue as Guest
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAboutOpen(true)}
-                  className="text-[8.5px] font-mono text-zinc-600 hover:text-indigo-400 uppercase tracking-widest mt-2 border-t border-zinc-900/60 pt-2 w-full transition-colors flex items-center justify-center gap-1 select-none"
-                >
-                  <span>ⓘ About SwitchX</span>
-                </button>
-              </div>
-            </div>
+            renderAuthForm(false)
           )}
         </div>
       ) : (
@@ -3487,81 +3920,25 @@ export default function MainStudio() {
                               allowFullScreen
                             />
                           </div>
-                          <div className="p-3.5 bg-zinc-950/60 border-t border-zinc-900 flex flex-col items-center gap-3">
-                            {/* Controller Buttons */}
-                            <div className="flex items-center gap-3">
-                              <button 
-                                onClick={() => triggerSilentMediaCommand('system_media_prev')}
-                                className="p-1.5 text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900/30 rounded transition-all"
-                                title="Previous Track"
-                              >
-                                <SkipBack size={13} />
-                              </button>
-                              
-                              <button 
-                                onClick={() => triggerSilentMediaCommand('system_media_toggle')}
-                                className="p-2 text-zinc-300 bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 hover:text-white rounded-full transition-all shadow"
-                                title="Play / Pause"
-                              >
-                                <Play size={13} />
-                              </button>
-
-                              <button 
-                                onClick={() => triggerSilentMediaCommand('system_media_next')}
-                                className="p-1.5 text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900/30 rounded transition-all"
-                                title="Next Track"
-                              >
-                                <SkipForward size={13} />
-                              </button>
-                              
-                              <div className="w-[1px] h-3 bg-zinc-900 mx-0.5" />
-
-                              <button 
-                                onClick={() => triggerSilentMediaCommand('system_media_vol_down')}
-                                className="p-1.5 text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900/30 rounded transition-all"
-                                title="Volume Down"
-                              >
-                                <Volume1 size={13} />
-                              </button>
-
-                              <button 
-                                onClick={() => triggerSilentMediaCommand('system_media_mute')}
-                                className="p-1.5 text-zinc-600 hover:text-rose-450 hover:bg-zinc-900/30 rounded transition-all"
-                                title="Mute / Unmute"
-                              >
-                                <VolumeX size={13} />
-                              </button>
-
-                              <button 
-                                onClick={() => triggerSilentMediaCommand('system_media_vol_up')}
-                                className="p-1.5 text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900/30 rounded transition-all"
-                                title="Volume Up"
-                              >
-                                <Volume2 size={13} />
-                              </button>
+                          {msg.platformLinks && (
+                            <div className="p-3 bg-zinc-950/60 border-t border-zinc-900 flex justify-center items-center gap-6 w-full">
+                              {msg.platformLinks.spotify && (
+                                <a href={msg.platformLinks.spotify} target="_blank" rel="noreferrer" className="text-[10px] text-zinc-500 hover:text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors">
+                                  Spotify
+                                </a>
+                              )}
+                              {msg.platformLinks.appleMusic && (
+                                <a href={msg.platformLinks.appleMusic} target="_blank" rel="noreferrer" className="text-[10px] text-zinc-500 hover:text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors">
+                                  Apple Music
+                                </a>
+                              )}
+                              {msg.platformLinks.youtube && (
+                                <a href={msg.platformLinks.youtube} target="_blank" rel="noreferrer" className="text-[10px] text-zinc-500 hover:text-red-500 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors">
+                                  YouTube
+                                </a>
+                              )}
                             </div>
-
-                            {/* Redirect Links */}
-                            {msg.platformLinks && (
-                              <div className="flex justify-center items-center gap-6 pt-2 border-t border-zinc-900/40 w-full">
-                                {msg.platformLinks.spotify && (
-                                  <a href={msg.platformLinks.spotify} target="_blank" rel="noreferrer" className="text-[10px] text-zinc-500 hover:text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors">
-                                    Spotify
-                                  </a>
-                                )}
-                                {msg.platformLinks.appleMusic && (
-                                  <a href={msg.platformLinks.appleMusic} target="_blank" rel="noreferrer" className="text-[10px] text-zinc-500 hover:text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors">
-                                    Apple Music
-                                  </a>
-                                )}
-                                {msg.platformLinks.youtube && (
-                                  <a href={msg.platformLinks.youtube} target="_blank" rel="noreferrer" className="text-[10px] text-zinc-500 hover:text-red-500 font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors">
-                                    YouTube
-                                  </a>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -4004,448 +4381,209 @@ export default function MainStudio() {
               </div>
             </div>
           )}
-        </div>
-      )}
 
-      {authModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#030306]/75 border border-white/[0.04] rounded-2xl p-6 w-[340px] max-w-full space-y-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl relative">
-            <button 
-              type="button" 
-              onClick={() => { setAuthModalOpen(false); setAuthError(''); }} 
-              className="absolute top-4 right-4 text-zinc-550 hover:text-zinc-350 transition-colors p-1"
-            >
-              <X size={15} />
-            </button>
-
-            <div className="text-center space-y-1.5 pb-2 border-b border-zinc-900/50 pt-2 select-none">
-              <span className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-200 font-sans">SwitchX Workspace</span>
-              <p className="text-[9px] text-zinc-500 font-mono tracking-wider uppercase">
-                {authModalMode === 'login' ? 'Welcome back. Initialize session.' : 'Create secure developer profile.'}
-              </p>
+          {authModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md animate-fade-in">
+              {renderAuthForm(true)}
             </div>
+          )}
 
-            {authError && (
-              <div className="p-2.5 rounded-lg border border-red-955/20 bg-red-955/10 text-red-400 text-[10px] text-center font-medium leading-normal font-sans">
-                {authError}
+          {aboutOpen && (
+            <div className={isAppUnrolled 
+              ? "fixed bottom-6 right-6 z-[110] animate-fade-in" 
+              : "fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in"
+            }>
+              <div className="bg-[#030306]/90 border border-white/[0.05] rounded-3xl p-6 w-[540px] max-w-full space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl relative text-left select-none transition-all duration-300">
+                <button 
+                  type="button" 
+                  onClick={() => { playSoftClickSound(); setAboutOpen(false); }} 
+                  className="absolute top-5 right-5 text-zinc-550 hover:text-zinc-350 transition-colors p-1"
+                >
+                  <X size={16} />
+                </button>
+
+                <div className="space-y-1 pb-3 border-b border-zinc-900/60">
+                  <span className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-200 font-sans">About SwitchX Studio</span>
+                  <p className="text-[9px] text-zinc-500 font-mono tracking-wider uppercase">System Guide & Architecture Overview</p>
+                </div>
+
+                <div className="space-y-4 text-xs text-zinc-400 font-sans leading-relaxed max-h-[420px] overflow-y-auto pr-1.5 scrollbar-thin">
+                  
+                  {/* How to Use It for Development */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
+                      <Sliders size={14} className="text-indigo-400" />
+                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-200">How to Use It for Development</h5>
+                    </div>
+                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
+                      <p>• <strong className="text-zinc-300">Active Workspaces:</strong> Open any folder on your machine to manage files, run terminal commands, and edit code side-by-side with the assistant.</p>
+                      <p>• <strong className="text-zinc-300">Context Uploads:</strong> Click the paperclip icon or drag files directly into the prompt box to load local source files instantly into the AI's memory.</p>
+                      <p>• <strong className="text-zinc-300">Visual Building:</strong> Build templates in the <em className="text-indigo-350">Builder</em> tab, select custom colors/themes, and execute script tasks directly via the terminal.</p>
+                      <p>• <strong className="text-zinc-300">Real-time Emulation:</strong> Test layouts in the <em className="text-indigo-350">Simulator</em> tab, adjusting the viewport size to desktop, tablet, or mobile frames.</p>
+                    </div>
+                  </div>
+
+                  {/* What Features It Has */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
+                      <Layers size={14} className="text-indigo-400" />
+                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What Features It Has</h5>
+                    </div>
+                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
+                      <p>• <strong className="text-zinc-300">Developer Terminal:</strong> Direct shortcuts to run compiler tasks (<code className="text-indigo-300">npm dev</code>, <code className="text-indigo-300">build</code>) and run audits with streaming output.</p>
+                      <p>• <strong className="text-zinc-300">Database Console:</strong> A live, polling database explorer showing account lists, local files, and user credentials in real-time.</p>
+                      <p>• <strong className="text-zinc-300">Smart Device Controls:</strong> Dynamic state toggles that manage physical simulated lights, lock relays, and music systems via conversation.</p>
+                      <p>• <strong className="text-zinc-300">Cron Scheduler:</strong> Schedule background execution nodes and alerts in natural language with visual countdown queues.</p>
+                    </div>
+                  </div>
+
+                  {/* What It Can Do */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
+                      <Activity size={14} className="text-indigo-400" />
+                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What It Can Do</h5>
+                    </div>
+                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
+                      <p>• <strong className="text-zinc-300">Full Stack Generation:</strong> Instantly compile responsive dashboard layouts, database forms, and interactive widgets into clean code structures.</p>
+                      <p>• <strong className="text-zinc-300">Self-Healing Loops:</strong> Listen to and intercept client execution errors, trace stack traces, and self-patch bugs automatically.</p>
+                      <p>• <strong className="text-zinc-300">Vision Design Sync:</strong> Read design mockups or wireframe files, parsing layout hierarchies to output beautiful React components.</p>
+                      <p>• <strong className="text-zinc-300">Sandbox Audits:</strong> Run diagnostic checks on browser features (Web Speech recognition, Audio synth contexts, and local storage limits) to ensure baseline development stability.</p>
+                    </div>
+                  </div>
+
+                  {/* What Technology It Is Made With */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
+                      <Database size={14} className="text-indigo-400" />
+                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What Technology It Is Made With</h5>
+                    </div>
+                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
+                      <p>• <strong className="text-zinc-300">Next.js 14 & React 18:</strong> Leverages App Router mechanics, fast server components, and React's state hydration layer.</p>
+                      <p>• <strong className="text-zinc-300">Tailwind CSS Engine:</strong> Custom dark glassmorphism system styled with flexible utility classes, smooth layouts, and glowing lasers.</p>
+                      <p>• <strong className="text-zinc-350">Google Gemini SDK & APIs:</strong> Long-context LLM intelligence coordinating parsing rules, code writing, and structural outputs.</p>
+                      <p>• <strong className="text-zinc-350">Native HTML5 Web APIs:</strong> Core integration of browser Speech-to-Text Recognition, AudioContext sound synthesizers, and offline Local Storage databases.</p>
+                    </div>
+                  </div>
+
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={() => { playSoftClickSound(); setAboutOpen(false); }} 
+                  className="w-full py-2 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800/80 hover:border-zinc-700 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm text-center font-sans"
+                >
+                  Acknowledge
+                </button>
               </div>
-            )}
+            </div>
+          )}
 
-            <form onSubmit={authModalMode === 'login' ? handleLogin : handleSignup} className="space-y-3">
-              {authModalMode === 'login' ? (
-                <>
-                  <div className="space-y-1 text-left animate-fade-in">
-                    <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block">Username</label>
-                    <input
-                      type="text"
-                      required
-                      value={authUsername}
-                      onChange={(e) => setAuthUsername(e.target.value)}
-                      className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-955/60 transition-all font-sans"
-                      placeholder="Enter username..."
-                      autoComplete="off"
-                    />
+          {settingsOpen && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+              <div className="bg-[#030306]/85 border border-white/[0.04] rounded-2xl p-6 w-[360px] max-w-full space-y-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl relative text-left select-none animate-scale-up">
+                <button 
+                  type="button" 
+                  onClick={() => { playSoftClickSound(); setSettingsOpen(false); }} 
+                  className="absolute top-4 right-4 text-zinc-550 hover:text-zinc-350 transition-colors p-1"
+                >
+                  <X size={15} />
+                </button>
+
+                <div className="text-center space-y-1.5 pb-2 border-b border-zinc-900/50">
+                  <span className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-200 font-sans">Account Profile</span>
+                  <p className="text-[9px] text-zinc-500 font-mono tracking-wider uppercase">Active Sandbox User Identity</p>
+                </div>
+
+                <div className="space-y-4 text-xs text-zinc-400 font-sans leading-relaxed select-none">
+                  {/* Profile details */}
+                  <div className="space-y-1">
+                    <h5 className="font-bold uppercase text-[8px] tracking-widest font-mono text-zinc-550">Active Account Layer</h5>
+                    <div className="p-4 bg-black/45 border border-zinc-900/60 rounded-xl flex items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-650/40 to-emerald-500/40 border border-white/[0.04] flex items-center justify-center text-[12px] font-bold text-zinc-200 shrink-0">
+                          {currentUser ? currentUser.slice(0, 2).toUpperCase() : "G"}
+                        </div>
+                        <div className="flex flex-col text-left overflow-hidden">
+                          <span className="text-[12.5px] font-bold text-zinc-200 truncate">{currentUser || "Guest Account"}</span>
+                          <span className="text-[8.5px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">
+                            {currentUser ? "PRO DEV LICENSE" : `Usage Limit: ${guestUsageCount}/3 Requests`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-1 text-left animate-fade-in">
-                    <label className="text-[8.5px] font-mono font-bold text-zinc-555 uppercase tracking-widest pl-1 block">Password</label>
-                    <input
-                      type="password"
-                      required
-                      value={authPassword}
-                      onChange={(e) => setAuthPassword(e.target.value)}
-                      className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-955/60 transition-all font-sans"
-                      placeholder="••••••••"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
-                  >
-                    Log In
-                  </button>
-                </>
-              ) : (
-                <>
-                  {!authOtpSent ? (
-                    <>
-                      <div className="space-y-1 text-left animate-fade-in">
-                        <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block">Username</label>
-                        <input
-                          type="text"
-                          required
-                          value={authUsername}
-                          onChange={(e) => setAuthUsername(e.target.value)}
-                          className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-955/60 transition-all font-sans"
-                          placeholder="Create username..."
-                          autoComplete="off"
-                        />
-                      </div>
-
-                      <div className="space-y-1 text-left animate-fade-in">
-                        <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block">Password</label>
-                        <input
-                          type="password"
-                          required
-                          value={authPassword}
-                          onChange={(e) => setAuthPassword(e.target.value)}
-                          className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-955/60 transition-all font-sans"
-                          placeholder="••••••••"
-                        />
-                      </div>
-
-                      <div className="space-y-2 pt-1 text-left animate-fade-in">
-                        <div className="flex justify-between items-center pl-1 pr-1">
-                          <label className="text-[8.5px] font-mono font-bold text-zinc-555 uppercase tracking-widest block select-none">Verification Method</label>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowGatewaySettings(!showGatewaySettings);
-                              setAuthError('');
-                            }}
-                            className={`text-[8.5px] font-mono uppercase tracking-wider transition-colors flex items-center gap-1 ${showGatewaySettings ? 'text-indigo-400 font-bold' : 'text-zinc-500 hover:text-zinc-355'}`}
+                  {/* Actions list */}
+                  <div className="space-y-2.5 pt-3 border-t border-zinc-900/50">
+                    <h5 className="font-bold uppercase text-[8px] tracking-widest font-mono text-zinc-550">Access Actions</h5>
+                    <div className="flex flex-col gap-2">
+                      {currentUser ? (
+                        <>
+                          <button 
+                            type="button" 
+                            onClick={() => { playSoftClickSound(); setSettingsOpen(false); handleSignout(); }} 
+                            className="w-full text-center py-2.5 bg-zinc-900/40 hover:bg-zinc-800/40 border border-zinc-850 hover:border-zinc-800 text-zinc-350 hover:text-zinc-200 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase"
                           >
-                            <span>⚙️</span>
-                            <span>{showGatewaySettings ? 'Close Settings' : 'Gateway Config'}</span>
+                            Sign Out
                           </button>
-                        </div>
-
-                        {showGatewaySettings ? (
-                          <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-2.5 animate-fade-in text-left">
-                            <div className="flex justify-between items-center border-b border-indigo-500/10 pb-1.5 select-none">
-                              <span className="text-[9px] font-mono font-bold text-indigo-400 uppercase tracking-widest">Gateway settings</span>
-                              <span className="text-[7.5px] font-mono text-zinc-550">Saved Locally</span>
-                            </div>
-                            
-                            {/* Resend Key */}
-                            <div className="space-y-1">
-                              <div className="flex justify-between items-center">
-                                <label className="text-[8px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Resend API Key (Email)</label>
-                                <a href="https://resend.com" target="_blank" rel="noreferrer" className="text-[8px] font-mono text-indigo-400 hover:underline">Get Key</a>
-                              </div>
-                              <input
-                                type="password"
-                                value={gatewayResendKey}
-                                onChange={(e) => {
-                                  setGatewayResendKey(e.target.value);
-                                  localStorage.setItem('switchx_gate_resend_api_key', e.target.value.trim());
-                                }}
-                                className="w-full px-2 py-1 bg-black/60 border border-zinc-900/80 rounded-lg text-[10px] text-zinc-300 focus:outline-none focus:border-indigo-500/40 font-mono"
-                                placeholder="re_..."
-                                autoComplete="off"
-                              />
-                            </div>
-
-
-                            
-                            <button
-                              type="button"
-                              onClick={() => setShowGatewaySettings(false)}
-                              className="w-full py-1.5 bg-indigo-950/30 hover:bg-indigo-900/40 border border-indigo-500/20 text-indigo-300 text-[9px] font-bold tracking-wider rounded-lg transition-all uppercase mt-1"
-                            >
-                              Save & Close Settings
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="space-y-1 text-left animate-fade-in">
-                              <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Email Address</label>
-                              <input
-                                type="email"
-                                required
-                                value={authContact}
-                                onChange={(e) => setAuthContact(e.target.value)}
-                                className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-255 focus:outline-none focus:border-zinc-800 focus:bg-zinc-955/60 transition-all font-sans"
-                                placeholder="email@example.com"
-                                autoComplete="off"
-                              />
-                            </div>
-
-                            <button
-                              type="submit"
-                              className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans animate-fade-in"
-                            >
-                              Send Verification Code
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-3 py-1 text-left animate-fade-in">
-                        <p className="text-[10px] text-zinc-405 font-sans leading-relaxed">
-                          A verification code has been dispatched. Please verify below.
-                        </p>
-                        <div className="space-y-1">
-                          <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Verification Code</label>
-                          <input
-                            type="text"
-                            required
-                            maxLength={6}
-                            value={authOtpInput}
-                            onChange={(e) => setAuthOtpInput(e.target.value.replace(/\D/g, ''))}
-                            className="w-full px-3 py-2 bg-black/40 border border-zinc-900/80 rounded-xl text-sm font-bold tracking-[0.5em] text-center text-indigo-300 focus:outline-none focus:border-zinc-800 focus:bg-zinc-955/60 transition-all font-mono"
-                            placeholder="000000"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans"
-                      >
-                        Verify & Sign Up
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAuthOtpSent(false);
-                          setAuthOtpInput('');
-                          setGeneratedOtp('');
-                        }}
-                        className="w-full text-center text-[9px] text-zinc-550 hover:text-zinc-350 font-mono uppercase tracking-wider mt-1 block transition-colors select-none"
-                      >
-                        ← Change Details
-                      </button>
-                    </>
-                  )}
-                </>
-              )}
-            </form>
-
-            <div className="flex flex-col gap-2 items-center text-[10px] pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthModalMode(authModalMode === 'login' ? 'signup' : 'login');
-                  setAuthError('');
-                }}
-                className="text-zinc-400 hover:text-zinc-200 transition-colors font-sans"
-              >
-                {authModalMode === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Log In"}
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthModalOpen(false);
-                  setAuthError('');
-                  setTerminalLogs(prev => [...prev, '[SYSTEM] Switched to Guest Layer. Capped at 3 queries.']);
-                }}
-                className="text-[9.5px] font-mono text-zinc-650 hover:text-zinc-450 uppercase tracking-widest pt-1"
-              >
-                Continue as Guest
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setAboutOpen(true)}
-                className="text-[8.5px] font-mono text-zinc-600 hover:text-indigo-400 uppercase tracking-widest mt-2 border-t border-zinc-900/60 pt-2 w-full transition-colors flex items-center justify-center gap-1 select-none"
-              >
-                <span>ⓘ About SwitchX</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {aboutOpen && (
-        <div className={isAppUnrolled 
-          ? "fixed bottom-6 right-6 z-[110] animate-fade-in" 
-          : "fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in"
-        }>
-          <div className="bg-[#030306]/90 border border-white/[0.05] rounded-3xl p-6 w-[540px] max-w-full space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl relative text-left select-none transition-all duration-300">
-            <button 
-              type="button" 
-              onClick={() => { playSoftClickSound(); setAboutOpen(false); }} 
-              className="absolute top-5 right-5 text-zinc-550 hover:text-zinc-350 transition-colors p-1"
-            >
-              <X size={16} />
-            </button>
-
-            <div className="space-y-1 pb-3 border-b border-zinc-900/60">
-              <span className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-200 font-sans">About SwitchX Studio</span>
-              <p className="text-[9px] text-zinc-500 font-mono tracking-wider uppercase">System Guide & Architecture Overview</p>
-            </div>
-
-            <div className="space-y-4 text-xs text-zinc-400 font-sans leading-relaxed max-h-[420px] overflow-y-auto pr-1.5 scrollbar-thin">
-              
-              {/* How to Use It for Development */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
-                  <Sliders size={14} className="text-indigo-400" />
-                  <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-200">How to Use It for Development</h5>
-                </div>
-                <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
-                  <p>• <strong className="text-zinc-300">Active Workspaces:</strong> Open any folder on your machine to manage files, run terminal commands, and edit code side-by-side with the assistant.</p>
-                  <p>• <strong className="text-zinc-300">Context Uploads:</strong> Click the paperclip icon or drag files directly into the prompt box to load local source files instantly into the AI's memory.</p>
-                  <p>• <strong className="text-zinc-300">Visual Building:</strong> Build templates in the <em className="text-indigo-350">Builder</em> tab, select custom colors/themes, and execute script tasks directly via the terminal.</p>
-                  <p>• <strong className="text-zinc-300">Real-time Emulation:</strong> Test layouts in the <em className="text-indigo-350">Simulator</em> tab, adjusting the viewport size to desktop, tablet, or mobile frames.</p>
-                </div>
-              </div>
-
-              {/* What Features It Has */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
-                  <Layers size={14} className="text-indigo-400" />
-                  <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What Features It Has</h5>
-                </div>
-                <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
-                  <p>• <strong className="text-zinc-300">Developer Terminal:</strong> Direct shortcuts to run compiler tasks (<code className="text-indigo-300">npm dev</code>, <code className="text-indigo-300">build</code>) and run audits with streaming output.</p>
-                  <p>• <strong className="text-zinc-300">Database Console:</strong> A live, polling database explorer showing account lists, local files, and user credentials in real-time.</p>
-                  <p>• <strong className="text-zinc-300">Smart Device Controls:</strong> Dynamic state toggles that manage physical simulated lights, lock relays, and music systems via conversation.</p>
-                  <p>• <strong className="text-zinc-300">Cron Scheduler:</strong> Schedule background execution nodes and alerts in natural language with visual countdown queues.</p>
-                </div>
-              </div>
-
-              {/* What It Can Do */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
-                  <Activity size={14} className="text-indigo-400" />
-                  <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What It Can Do</h5>
-                </div>
-                <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
-                  <p>• <strong className="text-zinc-300">Full Stack Generation:</strong> Instantly compile responsive dashboard layouts, database forms, and interactive widgets into clean code structures.</p>
-                  <p>• <strong className="text-zinc-300">Self-Healing Loops:</strong> Listen to and intercept client execution errors, trace stack traces, and self-patch bugs automatically.</p>
-                  <p>• <strong className="text-zinc-300">Vision Design Sync:</strong> Read design mockups or wireframe files, parsing layout hierarchies to output beautiful React components.</p>
-                  <p>• <strong className="text-zinc-300">Sandbox Audits:</strong> Run diagnostic checks on browser features (Web Speech recognition, Audio synth contexts, and local storage limits) to ensure baseline development stability.</p>
-                </div>
-              </div>
-
-              {/* What Technology It Is Made With */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
-                  <Database size={14} className="text-indigo-400" />
-                  <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What Technology It Is Made With</h5>
-                </div>
-                <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
-                  <p>• <strong className="text-zinc-300">Next.js 14 & React 18:</strong> Leverages App Router mechanics, fast server components, and React's state hydration layer.</p>
-                  <p>• <strong className="text-zinc-300">Tailwind CSS Engine:</strong> Custom dark glassmorphism system styled with flexible utility classes, smooth layouts, and glowing lasers.</p>
-                  <p>• <strong className="text-zinc-350">Google Gemini SDK & APIs:</strong> Long-context LLM intelligence coordinating parsing rules, code writing, and structural outputs.</p>
-                  <p>• <strong className="text-zinc-350">Native HTML5 Web APIs:</strong> Core integration of browser Speech-to-Text Recognition, AudioContext sound synthesizers, and offline Local Storage databases.</p>
-                </div>
-              </div>
-
-            </div>
-
-            <button 
-              type="button" 
-              onClick={() => { playSoftClickSound(); setAboutOpen(false); }} 
-              className="w-full py-2 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800/80 hover:border-zinc-700 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm text-center font-sans"
-            >
-              Acknowledge
-            </button>
-          </div>
-        </div>
-      )}
-
-      {settingsOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#030306]/85 border border-white/[0.04] rounded-2xl p-6 w-[360px] max-w-full space-y-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl relative text-left select-none animate-scale-up">
-            <button 
-              type="button" 
-              onClick={() => { playSoftClickSound(); setSettingsOpen(false); }} 
-              className="absolute top-4 right-4 text-zinc-550 hover:text-zinc-350 transition-colors p-1"
-            >
-              <X size={15} />
-            </button>
-
-            <div className="text-center space-y-1.5 pb-2 border-b border-zinc-900/50">
-              <span className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-200 font-sans">Account Profile</span>
-              <p className="text-[9px] text-zinc-500 font-mono tracking-wider uppercase">Active Sandbox User Identity</p>
-            </div>
-
-            <div className="space-y-4 text-xs text-zinc-400 font-sans leading-relaxed select-none">
-              {/* Profile details */}
-              <div className="space-y-1">
-                <h5 className="font-bold uppercase text-[8px] tracking-widest font-mono text-zinc-550">Active Account Layer</h5>
-                <div className="p-4 bg-black/45 border border-zinc-900/60 rounded-xl flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-650/40 to-emerald-500/40 border border-white/[0.04] flex items-center justify-center text-[12px] font-bold text-zinc-200 shrink-0">
-                      {currentUser ? currentUser.slice(0, 2).toUpperCase() : "G"}
-                    </div>
-                    <div className="flex flex-col text-left overflow-hidden">
-                      <span className="text-[12.5px] font-bold text-zinc-200 truncate">{currentUser || "Guest Account"}</span>
-                      <span className="text-[8.5px] font-mono text-zinc-500 uppercase tracking-widest mt-0.5">
-                        {currentUser ? "PRO DEV LICENSE" : `Usage Limit: ${guestUsageCount}/3 Requests`}
-                      </span>
+                          <button 
+                            type="button" 
+                            onClick={() => { playSoftClickSound(); setSettingsOpen(false); handleDeleteAccount(); }} 
+                            className="w-full text-center py-2.5 bg-red-950/10 hover:bg-red-950/20 border border-red-955/20 hover:border-red-900/30 text-red-400 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-1"
+                          >
+                            Delete Account & Data
+                          </button>
+                        </>
+                      ) : (
+                        <button 
+                          type="button" 
+                          onClick={() => { playSoftClickSound(); setSettingsOpen(false); setAuthModalOpen(true); setAuthModalMode('login'); }} 
+                          className="w-full text-center py-2.5 bg-indigo-950/20 hover:bg-indigo-955/30 border border-indigo-900/40 hover:border-indigo-500/50 text-indigo-400 hover:text-indigo-300 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase"
+                        >
+                          Sign In to SwitchX
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Actions list */}
-              <div className="space-y-2.5 pt-3 border-t border-zinc-900/50">
-                <h5 className="font-bold uppercase text-[8px] tracking-widest font-mono text-zinc-550">Access Actions</h5>
-                <div className="flex flex-col gap-2">
-                  {currentUser ? (
-                    <>
-                      <button 
-                        type="button" 
-                        onClick={() => { playSoftClickSound(); setSettingsOpen(false); handleSignout(); }} 
-                        className="w-full text-center py-2.5 bg-zinc-900/40 hover:bg-zinc-800/40 border border-zinc-850 hover:border-zinc-800 text-zinc-350 hover:text-zinc-200 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase"
-                      >
-                        Sign Out
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => { playSoftClickSound(); setSettingsOpen(false); handleDeleteAccount(); }} 
-                        className="w-full text-center py-2.5 bg-red-950/10 hover:bg-red-950/20 border border-red-955/20 hover:border-red-900/30 text-red-400 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-1"
-                      >
-                        Delete Account & Data
-                      </button>
-                    </>
-                  ) : (
-                    <button 
-                      type="button" 
-                      onClick={() => { playSoftClickSound(); setSettingsOpen(false); setAuthModalOpen(true); setAuthModalMode('login'); }} 
-                      className="w-full text-center py-2.5 bg-indigo-950/20 hover:bg-indigo-955/30 border border-indigo-900/40 hover:border-indigo-500/50 text-indigo-400 hover:text-indigo-300 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase"
-                    >
-                      Sign In to SwitchX
-                    </button>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => { playSoftClickSound(); setSettingsOpen(false); }}
+                  className="w-full py-2 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800/80 hover:border-zinc-700 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 shadow-sm text-center font-sans"
+                >
+                  Close Settings
+                </button>
               </div>
             </div>
+          )}
 
-            <button
-              type="button"
-              onClick={() => { playSoftClickSound(); setSettingsOpen(false); }}
-              className="w-full py-2 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800/80 hover:border-zinc-700 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 shadow-sm text-center font-sans"
-            >
-              Close Settings
-            </button>
-          </div>
-        </div>
-      )}
-
-      {otpToast && otpToast.visible && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] w-[340px] max-w-full bg-[#020204]/90 border border-emerald-500/30 text-emerald-450 p-4 rounded-2xl shadow-[0_10px_40px_rgba(16,185,129,0.15)] backdrop-blur-xl animate-fade-in flex items-start gap-3 text-left">
-          <div className="p-2 bg-emerald-950/40 border border-emerald-500/20 rounded-xl text-emerald-400 shrink-0">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-          </div>
-          <div className="flex-1 space-y-1.5 min-w-0">
-            <h6 className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400">OTP Gateway Sim</h6>
-            <p className="text-[10px] text-zinc-400 leading-normal font-sans">
-              Verification OTP has been dispatched to <span className="text-zinc-200 font-bold font-mono">{otpToast.contact}</span>:
-            </p>
-
-          </div>
-          <button 
-            type="button" 
-            onClick={() => setOtpToast(null)} 
-            className="text-zinc-500 hover:text-zinc-350 p-1 transition-colors shrink-0 text-[10px] font-mono uppercase font-bold tracking-wider"
-          >
-            ✕
-          </button>
-        </div>
-      )}
+          {otpToast && otpToast.visible && (
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] w-[340px] max-w-full bg-[#020204]/90 border border-emerald-500/30 text-emerald-450 p-4 rounded-2xl shadow-[0_10px_40px_rgba(16,185,129,0.15)] backdrop-blur-xl animate-fade-in flex items-start gap-3 text-left animate-slide-up">
+              <div className="p-2 bg-emerald-950/40 border border-emerald-500/20 rounded-xl text-emerald-400 shrink-0">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+              </div>
+              <div className="flex-1 space-y-1.5 min-w-0">
+                <h6 className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400">OTP Gateway Sim</h6>
+                <p className="text-[10px] text-zinc-400 leading-normal font-sans">
+                  Verification OTP has been dispatched to <span className="text-zinc-200 font-bold font-mono">{otpToast.contact}</span>:
+                </p>
+                <div className="mt-1.5 py-1 px-3 bg-black/40 border border-emerald-500/20 rounded-xl text-center">
+                  <span className="text-xs font-mono font-bold tracking-[0.35em] text-emerald-400 select-all">{otpToast.code}</span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setOtpToast(null)} 
+                className="text-zinc-500 hover:text-zinc-350 p-1 transition-colors shrink-0 text-[10px] font-mono uppercase font-bold tracking-wider"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
       {isAppUnrolled && !aboutOpen && (
         <div className="fixed bottom-4 right-4 z-40 select-none animate-fade-in">
@@ -4458,6 +4596,8 @@ export default function MainStudio() {
           </button>
         </div>
       )}
+    </div>
+)}
 
       <style jsx global>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

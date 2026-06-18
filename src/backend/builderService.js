@@ -120,9 +120,32 @@ function launchSystemApp(commandString) {
   }
 }
 
-// Helper: Scrape YouTube search results for first active video ID
+// Helper: Extract YouTube video ID from a URL
+function extractYouTubeId(urlOrQuery) {
+  if (!urlOrQuery) return null;
+  const patterns = [
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+  ];
+  for (const pattern of patterns) {
+    const match = urlOrQuery.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// Helper: Scrape YouTube search results for first active video ID or parse direct link
 async function getYouTubeVideoId(query) {
   try {
+    const directId = extractYouTubeId(query);
+    if (directId) {
+      console.log(`Direct YouTube ID parsed from query: ${directId}`);
+      return directId;
+    }
+
     const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
     console.log(`Fetching YouTube search page: ${searchUrl}`);
     const res = await fetch(searchUrl, {
@@ -631,29 +654,24 @@ Operating within the SwitchX AI Studio (founded solely by Mr. Shubham Sharma), y
 
 - PHOTO/IMAGE INTEGRATION PROTOCOL: If the operator/customer uploads a photo/image and asks to use it in their website, you MUST use the exact placeholder src="[UPLOADED_IMAGE]" (case-sensitive) in the generated HTML code (e.g. <img src="[UPLOADED_IMAGE]" ... />). The website compiler will automatically substitute this placeholder with their uploaded image dynamically. Never output broken image links or raw huge base64 strings in the code block; always use "[UPLOADED_IMAGE]" for user-uploaded images.
 
-- SYSTEM EXECUTION & MEDIA CONTROL PROTOCOL: If the operator requests to open, run, control, or launch any application, program, software, website, or media file, you MUST append a JSON block to your response containing:
-  \`\`\`json
-  {
-    "systemCommand": "start <program_name_or_url_or_filepath_or_powershell_media_key>",
-    "mediaSearchQuery": "<song_name_and_artist_if_music_or_video>",
-    "embedUrl": "<corresponding_embed_or_app_url_if_applicable>",
-    "platformLinks": {
-      "spotify": "<spotify_link_if_music>",
-      "appleMusic": "<apple_music_link_if_music>",
-      "youtube": "<youtube_link_if_music>"
+- SYSTEM EXECUTION & MEDIA CONTROL PROTOCOL:
+  * Application execution: If the operator requests to open, run, or launch any local application, program, or website (e.g. "open notepad", "launch chrome"), you MUST append a JSON block containing:
+    \`\`\`json
+    {
+      "systemCommand": "start <program_name_or_url_or_filepath>"
     }
-  }
-  \`\`\`
-  Ensure the systemCommand uses Windows command syntax (like "start notepad", "start chrome", or "start calc"). 
-  CRITICAL: You MUST ONLY generate the media execution JSON block if the user EXPLICITLY asks to play a song/video (e.g., "play dior", "play some music"), control playback, or launch/open an app. If the user is just asking a question, talking casually, or requesting information (e.g. "who is pop smoke?", "tell me about dior"), you MUST NOT output the JSON block, even if you mention songs in your text. Do NOT suggest playing it by outputting the JSON block unless directly commanded.
-  If the operator requests to play music, videos, or movies inside the SwitchX interface (e.g. "play pop smoke dior"), you MUST populate "mediaSearchQuery" with the search terms (e.g. "pop smoke dior"), and "embedUrl" with a placeholder YouTube embed link (which will be dynamically replaced with the correct video ID on the server). Do NOT generate a "systemCommand" that opens a web browser for in-app media playback unless the user explicitly requests to "open in browser" or "open Spotify/YouTube/Apple Music externally".
-  For Windows media playback controls (e.g. pause, play, next, previous, mute, volume up/down), map these requests to the following systemCommand key simulation actions:
-  - Toggle play/pause: "powershell -Command \"(New-Object -ComObject WScript.Shell).SendKeys([char]179)\""
-  - Next track: "powershell -Command \"(New-Object -ComObject WScript.Shell).SendKeys([char]176)\""
-  - Previous track: "powershell -Command \"(New-Object -ComObject WScript.Shell).SendKeys([char]177)\""
-  - Volume Up: "powershell -Command \"(New-Object -ComObject WScript.Shell).SendKeys([char]175)\""
-  - Volume Down: "powershell -Command \"(New-Object -ComObject WScript.Shell).SendKeys([char]174)\""
-  - Mute/Unmute: "powershell -Command \"(New-Object -ComObject WScript.Shell).SendKeys([char]173)\""
+    \`\`\`
+  * Generic Play Requests / YouTube video links: If the user explicitly asks to play a song/video (e.g. "play dior", "play pop smoke") or inputs a direct YouTube link and asks you to play it (e.g., "play https://www.youtube.com/watch?v=dQw4w9WgXcQ"), you MUST output a JSON block containing:
+    \`\`\`json
+    {
+      "mediaSearchQuery": "<song_name_or_direct_youtube_url>",
+      "embedUrl": "https://www.youtube.com/embed/placeholder"
+    }
+    \`\`\`
+    (This is dynamically replaced with the correct YouTube ID on the server and rendered as an embedded video card without playback buttons).
+  * Music Platform Requests: If the user explicitly asks to play a song ON a specific music platform (e.g. "play dior on spotify", "play Pop Smoke on Apple Music", "play it on YouTube links"), you MUST NOT output the JSON block (so no YouTube player card is generated). Instead, you MUST only output the direct link of the search or song for that music platform in your text and ask: "Would you like me to extract the details and lyrics of this song?".
+  * Song Details and Lyrics Extraction: If the user answers "yes" (or yes-related responses) to your question about extracting details and lyrics, you MUST output the song's details (Artist, Album, Release Year, Genre, etc.) and its full lyrics.
+  * NO REPETITIVE MEDIA CARDS: Once you output a media JSON block for a play request, you must NEVER repeat it or output any JSON media block in subsequent messages of the same conversation. Only output the JSON block on the exact turn the user explicitly requests playing a video/song. Do not output it in casual conversation or follow-up replies.
     `.trim();
 
     // Scan MEMORY_DIR for all files (excluding metadata) and load their pre-uploaded Gemini URIs (Files API Cache)

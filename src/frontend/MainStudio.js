@@ -2172,75 +2172,25 @@ export default function MainStudio() {
                     />
                   </div>
 
-                  <div className="space-y-2 pt-1 text-left animate-fade-in">
-                    <div className="flex justify-between items-center pl-1 pr-1">
-                      <label className="text-[8.5px] font-mono font-bold text-zinc-555 uppercase tracking-widest block select-none">Verification Method</label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowGatewaySettings(!showGatewaySettings);
-                          setAuthError('');
-                        }}
-                        className={`text-[8.5px] font-mono uppercase tracking-wider transition-colors flex items-center gap-1 ${showGatewaySettings ? 'text-indigo-400 font-bold' : 'text-zinc-500 hover:text-zinc-350'}`}
-                      >
-                        <span>⚙️</span>
-                        <span>{showGatewaySettings ? 'Close Settings' : 'Gateway Config'}</span>
-                      </button>
+                  <div className="space-y-3 pt-1 text-left animate-fade-in">
+                    <div className="space-y-1">
+                      <label className="text-[8.5px] font-mono font-bold text-zinc-555 uppercase tracking-widest pl-1 block select-none">Email Address</label>
+                      <input
+                        type="email"
+                        required
+                        value={authContact}
+                        onChange={(e) => setAuthContact(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
+                        placeholder="email@example.com"
+                        autoComplete="off"
+                      />
                     </div>
-
-                    {showGatewaySettings ? (
-                      <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-2.5 animate-fade-in text-left">
-                        <div className="flex justify-between items-center border-b border-indigo-500/10 pb-1.5 select-none">
-                          <span className="text-[9px] font-mono font-bold text-indigo-400 uppercase tracking-widest">Gateway settings</span>
-                          <span className="text-[7.5px] font-mono text-zinc-550">Saved Locally</span>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center">
-                            <label className="text-[8px] font-mono font-bold text-zinc-550 uppercase tracking-wider">Resend API Key (Email)</label>
-                            <a href="https://resend.com" target="_blank" rel="noreferrer" className="text-[8px] font-mono text-indigo-400 hover:underline">Get Key</a>
-                          </div>
-                          <input
-                            type="password"
-                            value={gatewayResendKey}
-                            onChange={(e) => {
-                              setGatewayResendKey(e.target.value);
-                              localStorage.setItem('switchx_gate_resend_api_key', e.target.value.trim());
-                            }}
-                            className="w-full px-2 py-1 bg-black/60 border border-zinc-900/80 rounded-lg text-[10px] text-zinc-300 focus:outline-none focus:border-indigo-500/40 font-mono"
-                            placeholder="re_..."
-                            autoComplete="off"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowGatewaySettings(false)}
-                          className="w-full py-1.5 bg-indigo-950/30 hover:bg-indigo-900/40 border border-indigo-500/20 text-indigo-300 text-[9px] font-bold tracking-wider rounded-lg transition-all uppercase mt-1"
-                        >
-                          Save & Close Settings
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="space-y-1 text-left animate-fade-in">
-                          <label className="text-[8.5px] font-mono font-bold text-zinc-550 uppercase tracking-widest pl-1 block select-none">Email Address</label>
-                          <input
-                            type="email"
-                            required
-                            value={authContact}
-                            onChange={(e) => setAuthContact(e.target.value)}
-                            className="w-full px-3 py-1.5 bg-black/40 border border-zinc-900/80 rounded-xl text-xs text-zinc-250 focus:outline-none focus:border-zinc-800 focus:bg-zinc-950/60 transition-all font-sans"
-                            placeholder="email@example.com"
-                            autoComplete="off"
-                          />
-                        </div>
-                        <button
-                          type="submit"
-                          className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans animate-fade-in"
-                        >
-                          Send Verification Code
-                        </button>
-                      </>
-                    )}
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 bg-zinc-900/50 hover:bg-zinc-900/80 border border-zinc-850 hover:border-zinc-750 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm font-sans animate-fade-in"
+                    >
+                      Send Verification Code
+                    </button>
                   </div>
                 </>
               ) : (
@@ -4566,14 +4516,17 @@ export default function MainStudio() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
               </div>
-              <div className="flex-1 space-y-1.5 min-w-0">
-                <h6 className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400">OTP Gateway Sim</h6>
-                <p className="text-[10px] text-zinc-400 leading-normal font-sans">
-                  Verification OTP has been dispatched to <span className="text-zinc-200 font-bold font-mono">{otpToast.contact}</span>:
+              <div className="flex-1 space-y-1 min-w-0">
+                <h6 className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400">Security Gateway</h6>
+                <p className="text-[11px] text-zinc-300 leading-normal font-sans">
+                  Verification OTP has been sent to your mail:
                 </p>
-                <div className="mt-1.5 py-1 px-3 bg-black/40 border border-emerald-500/20 rounded-xl text-center">
-                  <span className="text-xs font-mono font-bold tracking-[0.35em] text-emerald-400 select-all">{otpToast.code}</span>
-                </div>
+                <p className="text-[10px] text-zinc-400 font-mono truncate">
+                  {otpToast.contact}
+                </p>
+                <p className="text-[9px] text-zinc-500 mt-1 italic">
+                  Please check your inbox and spam folder.
+                </p>
               </div>
               <button 
                 type="button" 

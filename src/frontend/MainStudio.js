@@ -4338,92 +4338,7 @@ export default function MainStudio() {
             </div>
           )}
 
-          {aboutOpen && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
-              <div className="bg-[#030306]/90 border border-white/[0.05] rounded-3xl p-6 w-[540px] max-w-full space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl relative text-left select-none transition-all duration-300">
-                <button 
-                  type="button" 
-                  onClick={() => { playSoftClickSound(); setAboutOpen(false); }} 
-                  className="absolute top-5 right-5 text-zinc-550 hover:text-zinc-350 transition-colors p-1"
-                >
-                  <X size={16} />
-                </button>
 
-                <div className="space-y-1 pb-3 border-b border-zinc-900/60">
-                  <span className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-200 font-sans">About SwitchX Studio</span>
-                  <p className="text-[9px] text-zinc-500 font-mono tracking-wider uppercase">System Guide & Architecture Overview</p>
-                </div>
-
-                <div className="space-y-4 text-xs text-zinc-400 font-sans leading-relaxed max-h-[420px] overflow-y-auto pr-1.5 scrollbar-thin">
-                  
-                  {/* How to Use It for Development */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
-                      <Sliders size={14} className="text-indigo-400" />
-                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-200">How to Use It for Development</h5>
-                    </div>
-                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
-                      <p>• <strong className="text-zinc-300">Active Workspaces:</strong> Open any folder on your machine to manage files, run terminal commands, and edit code side-by-side with the assistant.</p>
-                      <p>• <strong className="text-zinc-300">Context Uploads:</strong> Click the paperclip icon or drag files directly into the prompt box to load local source files instantly into the AI's memory.</p>
-                      <p>• <strong className="text-zinc-300">Visual Building:</strong> Build templates in the <em className="text-indigo-350">Builder</em> tab, select custom colors/themes, and execute script tasks directly via the terminal.</p>
-                      <p>• <strong className="text-zinc-300">Real-time Emulation:</strong> Test layouts in the <em className="text-indigo-350">Simulator</em> tab, adjusting the viewport size to desktop, tablet, or mobile frames.</p>
-                    </div>
-                  </div>
-
-                  {/* What Features It Has */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
-                      <Layers size={14} className="text-indigo-400" />
-                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What Features It Has</h5>
-                    </div>
-                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
-                      <p>• <strong className="text-zinc-300">Developer Terminal:</strong> Direct shortcuts to run compiler tasks (<code className="text-indigo-300">npm dev</code>, <code className="text-indigo-300">build</code>) and run audits with streaming output.</p>
-                      <p>• <strong className="text-zinc-300">Database Console:</strong> A live, polling database explorer showing account lists, local files, and user credentials in real-time.</p>
-                      <p>• <strong className="text-zinc-300">Smart Device Controls:</strong> Dynamic state toggles that manage physical simulated lights, lock relays, and music systems via conversation.</p>
-                      <p>• <strong className="text-zinc-300">Cron Scheduler:</strong> Schedule background execution nodes and alerts in natural language with visual countdown queues.</p>
-                    </div>
-                  </div>
-
-                  {/* What It Can Do */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
-                      <Activity size={14} className="text-indigo-400" />
-                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What It Can Do</h5>
-                    </div>
-                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
-                      <p>• <strong className="text-zinc-300">Full Stack Generation:</strong> Instantly compile responsive dashboard layouts, database forms, and interactive widgets into clean code structures.</p>
-                      <p>• <strong className="text-zinc-300">Self-Healing Loops:</strong> Listen to and intercept client execution errors, trace stack traces, and self-patch bugs automatically.</p>
-                      <p>• <strong className="text-zinc-300">Vision Design Sync:</strong> Read design mockups or wireframe files, parsing layout hierarchies to output beautiful React components.</p>
-                      <p>• <strong className="text-zinc-300">Sandbox Audits:</strong> Run diagnostic checks on browser features (Web Speech recognition, Audio synth contexts, and local storage limits) to ensure baseline development stability.</p>
-                    </div>
-                  </div>
-
-                  {/* What Technology It Is Made With */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
-                      <Database size={14} className="text-indigo-400" />
-                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What Technology It Is Made With</h5>
-                    </div>
-                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
-                      <p>• <strong className="text-zinc-300">Next.js 14 & React 18:</strong> Leverages App Router mechanics, fast server components, and React's state hydration layer.</p>
-                      <p>• <strong className="text-zinc-300">Tailwind CSS Engine:</strong> Custom dark glassmorphism system styled with flexible utility classes, smooth layouts, and glowing lasers.</p>
-                      <p>• <strong className="text-zinc-350">Google Gemini SDK & APIs:</strong> Long-context LLM intelligence coordinating parsing rules, code writing, and structural outputs.</p>
-                      <p>• <strong className="text-zinc-350">Native HTML5 Web APIs:</strong> Core integration of browser Speech-to-Text Recognition, AudioContext sound synthesizers, and offline Local Storage databases.</p>
-                    </div>
-                  </div>
-
-                </div>
-
-                <button 
-                  type="button" 
-                  onClick={() => { playSoftClickSound(); setAboutOpen(false); }} 
-                  className="w-full py-2 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800/80 hover:border-zinc-700 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm text-center font-sans"
-                >
-                  Acknowledge
-                </button>
-              </div>
-            </div>
-          )}
 
           {settingsOpen && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
@@ -4546,6 +4461,93 @@ export default function MainStudio() {
           </button>
         </div>
       )}
+
+          {aboutOpen && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+              <div className="bg-[#030306]/90 border border-white/[0.05] rounded-3xl p-6 w-[540px] max-w-full space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl relative text-left select-none transition-all duration-300">
+                <button 
+                  type="button" 
+                  onClick={() => { playSoftClickSound(); setAboutOpen(false); }} 
+                  className="absolute top-5 right-5 text-zinc-550 hover:text-zinc-350 transition-colors p-1"
+                >
+                  <X size={16} />
+                </button>
+
+                <div className="space-y-1 pb-3 border-b border-zinc-900/60">
+                  <span className="text-xs font-bold tracking-[0.3em] uppercase text-zinc-200 font-sans">About SwitchX Studio</span>
+                  <p className="text-[9px] text-zinc-500 font-mono tracking-wider uppercase">System Guide & Architecture Overview</p>
+                </div>
+
+                <div className="space-y-4 text-xs text-zinc-400 font-sans leading-relaxed max-h-[420px] overflow-y-auto pr-1.5 scrollbar-thin">
+                  
+                  {/* How to Use It for Development */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
+                      <Sliders size={14} className="text-indigo-400" />
+                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-200">How to Use It for Development</h5>
+                    </div>
+                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
+                      <p>• <strong className="text-zinc-300">Active Workspaces:</strong> Open any folder on your machine to manage files, run terminal commands, and edit code side-by-side with the assistant.</p>
+                      <p>• <strong className="text-zinc-300">Context Uploads:</strong> Click the paperclip icon or drag files directly into the prompt box to load local source files instantly into the AI's memory.</p>
+                      <p>• <strong className="text-zinc-300">Visual Building:</strong> Build templates in the <em className="text-indigo-350">Builder</em> tab, select custom colors/themes, and execute script tasks directly via the terminal.</p>
+                      <p>• <strong className="text-zinc-300">Real-time Emulation:</strong> Test layouts in the <em className="text-indigo-350">Simulator</em> tab, adjusting the viewport size to desktop, tablet, or mobile frames.</p>
+                    </div>
+                  </div>
+
+                  {/* What Features It Has */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
+                      <Layers size={14} className="text-indigo-400" />
+                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What Features It Has</h5>
+                    </div>
+                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
+                      <p>• <strong className="text-zinc-300">Developer Terminal:</strong> Direct shortcuts to run compiler tasks (<code className="text-indigo-300">npm dev</code>, <code className="text-indigo-300">build</code>) and run audits with streaming output.</p>
+                      <p>• <strong className="text-zinc-300">Database Console:</strong> A live, polling database explorer showing account lists, local files, and user credentials in real-time.</p>
+                      <p>• <strong className="text-zinc-300">Smart Device Controls:</strong> Dynamic state toggles that manage physical simulated lights, lock relays, and music systems via conversation.</p>
+                      <p>• <strong className="text-zinc-300">Cron Scheduler:</strong> Schedule background execution nodes and alerts in natural language with visual countdown queues.</p>
+                    </div>
+                  </div>
+
+                  {/* What It Can Do */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
+                      <Activity size={14} className="text-indigo-400" />
+                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What It Can Do</h5>
+                    </div>
+                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
+                      <p>• <strong className="text-zinc-300">Full Stack Generation:</strong> Instantly compile responsive dashboard layouts, database forms, and interactive widgets into clean code structures.</p>
+                      <p>• <strong className="text-zinc-300">Self-Healing Loops:</strong> Listen to and intercept client execution errors, trace stack traces, and self-patch bugs automatically.</p>
+                      <p>• <strong className="text-zinc-300">Vision Design Sync:</strong> Read design mockups or wireframe files, parsing layout hierarchies to output beautiful React components.</p>
+                      <p>• <strong className="text-zinc-300">Sandbox Audits:</strong> Run diagnostic checks on browser features (Web Speech recognition, Audio synth contexts, and local storage limits) to ensure baseline development stability.</p>
+                    </div>
+                  </div>
+
+                  {/* What Technology It Is Made With */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 border-b border-zinc-900/50 pb-1">
+                      <Database size={14} className="text-indigo-400" />
+                      <h5 className="font-bold uppercase text-[9px] tracking-widest font-mono text-zinc-250">What Technology It Is Made With</h5>
+                    </div>
+                    <div className="pl-5 space-y-1.5 text-zinc-400 text-[10px]">
+                      <p>• <strong className="text-zinc-300">Next.js 14 & React 18:</strong> Leverages App Router mechanics, fast server components, and React's state hydration layer.</p>
+                      <p>• <strong className="text-zinc-300">Tailwind CSS Engine:</strong> Custom dark glassmorphism system styled with flexible utility classes, smooth layouts, and glowing lasers.</p>
+                      <p>• <strong className="text-zinc-350">Google Gemini SDK & APIs:</strong> Long-context LLM intelligence coordinating parsing rules, code writing, and structural outputs.</p>
+                      <p>• <strong className="text-zinc-350">Native HTML5 Web APIs:</strong> Core integration of browser Speech-to-Text Recognition, AudioContext sound synthesizers, and offline Local Storage databases.</p>
+                    </div>
+                  </div>
+
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={() => { playSoftClickSound(); setAboutOpen(false); }} 
+                  className="w-full py-2 bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800/80 hover:border-zinc-700 text-zinc-350 hover:text-zinc-150 text-[10px] font-bold tracking-widest rounded-xl transition-all uppercase mt-2 hover:scale-[1.01] shadow-sm text-center font-sans"
+                >
+                  Acknowledge
+                </button>
+              </div>
+            </div>
+          )}
     </div>
 )}
 

@@ -33,17 +33,29 @@ export async function POST(request) {
         });
 
         const mailOptions = {
-          from: `"SwitchX Core" <${gmailUser}>`,
+          from: `"SwitchX Support" <${gmailUser}>`,
           to: trimmedContact,
-          subject: 'Your SwitchX OTP Verification Code',
-          text: `Your SwitchX verification code is: ${code}`,
-          html: `<div style="font-family: sans-serif; padding: 20px; background-color: #050508; color: #f3f4f6; border-radius: 12px; border: 1px solid #6366f130;">
-            <h2 style="color: #818cf8; text-transform: uppercase; letter-spacing: 0.1em; font-size: 16px;">SwitchX Verification</h2>
-            <p style="font-size: 13px; color: #9ca3af;">Please use the following verification code to complete your SwitchX profile:</p>
-            <div style="background-color: #000; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #818cf840; margin: 16px 0;">
-              <span style="font-size: 20px; font-weight: bold; letter-spacing: 0.3em; color: #a5b4fc; font-family: monospace;">${code}</span>
+          subject: `${code} is your SwitchX verification code`,
+          text: `Welcome to SwitchX Studio! Please use the following code to verify your account: ${code}. If you did not request this code, you can safely ignore this email.`,
+          html: `<div style="font-family: Arial, sans-serif; padding: 24px; background-color: #0b0c10; color: #c5c6c7; border-radius: 12px; border: 1px solid #1f2833; max-width: 480px; margin: auto;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #66fcf1; margin: 0; font-size: 20px; letter-spacing: 0.05em;">SwitchX AI Studio</h2>
             </div>
-            <p style="font-size: 10px; color: #4b5563; margin-top: 20px;">This is an automated transmission from the SwitchX Client Sandbox.</p>
+            <p style="font-size: 14px; line-height: 1.5; color: #c5c6c7;">
+              Hello,<br/><br/>
+              Thank you for choosing SwitchX. Please use the verification code below to secure your session or complete your setup:
+            </p>
+            <div style="background-color: #1f2833; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #66fcf130; margin: 24px 0;">
+              <span style="font-size: 24px; font-weight: bold; letter-spacing: 0.25em; color: #66fcf1; font-family: monospace;">${code}</span>
+            </div>
+            <p style="font-size: 12px; line-height: 1.5; color: #a4a5a6;">
+              This code will expire shortly. For security, please do not share this code with anyone.
+            </p>
+            <hr style="border: 0; border-top: 1px solid #1f2833; margin: 24px 0;"/>
+            <p style="font-size: 10px; color: #8f9091; text-align: center; line-height: 1.4; margin: 0;">
+              SwitchX Studio Inc., Connaught Place, New Delhi, India<br/>
+              This is an automated security transmission. You are receiving this because an account action was requested.
+            </p>
           </div>`
         };
 

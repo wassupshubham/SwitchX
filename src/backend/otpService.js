@@ -8,7 +8,10 @@ export async function POST(request) {
       return NextResponse.json({ success: false, message: 'Missing contact details or verification code.' }, { status: 400 });
     }
 
-    const trimmedContact = contact.trim();
+        const trimmedContact = contact.trim();
+
+    // Log code to server console for local testing/debugging
+    console.log(`[SECURITY GATEWAY] Generated OTP code for ${trimmedContact}: ${code}`);
 
     if (!trimmedContact.includes('@')) {
       return NextResponse.json({ success: false, message: 'Please enter a valid email address.' }, { status: 400 });

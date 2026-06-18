@@ -2146,7 +2146,7 @@ export default function MainStudio() {
       setTerminalLogs(prev => [
         ...prev,
         `[SYSTEM] OTP transmission initiated...`,
-        `[SYSTEM] Cosmic verification OTP sent to ${contactVal}: ${otpCode}`
+        `[SYSTEM] Cosmic verification OTP dispatched to ${contactVal}. Please check your inbox.`
       ]);
 
       // Dispatch via backend API for real delivery if configured
@@ -4435,10 +4435,7 @@ export default function MainStudio() {
             <p className="text-[10px] text-zinc-400 leading-normal font-sans">
               Verification OTP has been dispatched to <span className="text-zinc-200 font-bold font-mono">{otpToast.contact}</span>:
             </p>
-            <div className="bg-black/55 border border-emerald-500/25 p-2 rounded-xl text-center select-all cursor-pointer hover:border-emerald-500/40 transition-colors">
-              <span className="text-sm font-bold tracking-[0.4em] font-mono text-emerald-350">{otpToast.code}</span>
-            </div>
-            <p className="text-[8px] text-zinc-550 font-mono text-center">Click code to select/copy</p>
+
           </div>
           <button 
             type="button" 

@@ -3842,7 +3842,7 @@ export default function MainStudio() {
                       {msg.role === 'assistant' && msg.exportFormats && (
                         <DocumentExportPanel formats={msg.exportFormats} />
                       )}
-                      {msg.generatedHtml && (
+                      {msg.generatedHtml && !msg.renderedImage && !msg.isVisualAsset && (
                         <div className="mt-3 text-left">
                           <button
                             type="button"

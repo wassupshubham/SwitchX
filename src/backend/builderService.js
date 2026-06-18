@@ -812,7 +812,13 @@ Operating within the SwitchX AI Studio (founded solely by Mr. Shubham Sharma), y
       contents.push({ role: 'user', parts });
     }
 
-    const visualKeywords = ["generate image", "generate picture", "create image", "create a picture", "render image", "design graphics", "draw a", "image of", "picture of"];
+    const visualKeywords = [
+      "generate image", "generate picture", "create image", "create a picture", 
+      "render image", "design graphics", "draw a", "image of", "picture of",
+      "illustration of", "generate illustration", "create illustration", 
+      "paint a", "photo of", "photograph of", "sketch of", "generate logo", 
+      "create logo", "logo of", "visual of", "render of"
+    ];
     const demandsVisual = visualKeywords.some(keyword => lowerPrompt.includes(keyword));
     const isPresentation = lowerPrompt.includes("presentation") || lowerPrompt.includes("deck") || lowerPrompt.includes("slides") || lowerPrompt.includes("ppt");
 
@@ -875,23 +881,28 @@ Operating within the SwitchX AI Studio (founded solely by Mr. Shubham Sharma), y
         ];
         resultText = "Compiled presentation deck with default fallback parameters.";
       }
-    } 
-    else if (demandsVisual) {
+    }    else if (demandsVisual) {
       isVisualAsset = true;
       targetVisualPrompt = prompt;
 
       const imageConfig = {
         systemInstruction: systemInstruction + `\n\nThe user wants to generate a visual asset. Output a JSON object containing:
         - imagePrompt (string, highly detailed, visually stunning, and fully optimized prompt for Pollinations AI. The prompt must describe a high-fidelity cinematic masterpiece: specify volumetric lighting, global illumination, raytracing, sharp 85mm lens focus, octane render details, and a dark space premium color palette with vibrant neon accents or gold highlights)
-        - resultText (string, a short sentence in scannable format summarizing the image creation)`,
+        - resultText (string, a short sentence in scannable format summarizing the image creation)
+        - width (integer, select standard width: 1920 for widescreen landscape/desktop wallpapers/banners, 1080 for standard square or portrait, 1200 for banners, 720 for cards)
+        - height (integer, select standard height: 1080 for widescreen landscape/desktop wallpapers, 1080 for standard square, 1920 for portrait phone wallpapers, 400 for headers/banners, 1280 for cards)
+        - enhance (boolean, true if user wants ultra-high detail/enhanced quality, otherwise false)`,
         responseMimeType: "application/json",
         responseSchema: {
           type: "OBJECT",
           properties: {
             imagePrompt: { type: "STRING" },
-            resultText: { type: "STRING" }
+            resultText: { type: "STRING" },
+            width: { type: "INTEGER" },
+            height: { type: "INTEGER" },
+            enhance: { type: "BOOLEAN" }
           },
-          required: ["imagePrompt", "resultText"]
+          required: ["imagePrompt", "resultText", "width", "height", "enhance"]
         }
       };
 
@@ -900,8 +911,11 @@ Operating within the SwitchX AI Studio (founded solely by Mr. Shubham Sharma), y
       try {
         const data = JSON.parse(response.text.trim());
         targetVisualPrompt = data.imagePrompt;
+        const width = data.width || 1000;
+        const height = data.height || 1000;
+        const enhance = data.enhance !== false;
         const randomSeed = Math.floor(Math.random() * 10000000);
-        generatedImageUrl = `https://image.pollinations.ai/p/${encodeURIComponent(targetVisualPrompt)}?width=1000&height=1000&seed=${randomSeed}&nologo=true&enhance=true`;
+        generatedImageUrl = `https://image.pollinations.ai/p/${encodeURIComponent(targetVisualPrompt)}?width=${width}&height=${height}&seed=${randomSeed}&nologo=true${enhance ? '&enhance=true' : ''}`;
         resultText = data.resultText;
       } catch (parseErr) {
         console.error("JSON parse error on visual asset creation:", parseErr);

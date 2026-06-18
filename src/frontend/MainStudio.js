@@ -4339,10 +4339,7 @@ export default function MainStudio() {
           )}
 
           {aboutOpen && (
-            <div className={isAppUnrolled 
-              ? "fixed bottom-6 right-6 z-[110] animate-fade-in" 
-              : "fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in"
-            }>
+            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
               <div className="bg-[#030306]/90 border border-white/[0.05] rounded-3xl p-6 w-[540px] max-w-full space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl relative text-left select-none transition-all duration-300">
                 <button 
                   type="button" 

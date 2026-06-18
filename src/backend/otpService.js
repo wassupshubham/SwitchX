@@ -33,7 +33,7 @@ export async function POST(request) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'SwitchX Sandbox <onboarding@resend.dev>',
+        from: process.env.RESEND_FROM_EMAIL || 'SwitchX Sandbox <onboarding@resend.dev>',
         to: trimmedContact,
         subject: 'Your SwitchX OTP Verification Code',
         text: `Your SwitchX verification code is: ${code}`,

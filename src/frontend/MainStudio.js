@@ -2454,7 +2454,8 @@ export default function MainStudio() {
             <>
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowLandingAuth(false);
                   setIsAppUnrolled(true);
                   setAuthError('');
@@ -2467,7 +2468,10 @@ export default function MainStudio() {
 
               <button
                 type="button"
-                onClick={() => setAboutOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAboutOpen(true);
+                }}
                 className="text-[8.5px] font-mono text-zinc-600 hover:text-indigo-400 uppercase tracking-widest mt-2 border-t border-zinc-900/60 pt-2 w-full transition-colors flex items-center justify-center gap-1 select-none"
               >
                 <span>ⓘ About SwitchX</span>
